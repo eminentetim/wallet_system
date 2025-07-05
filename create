@@ -1,0 +1,47 @@
+#!/bin/bash
+
+echo "🔧 Setting up NestJS wallet structure..."
+
+# Base folders and files to create
+declare -a dirs=(
+  "src/modules/wallet/controllers"
+  "src/modules/wallet/services"
+  "src/modules/wallet/dto"
+  "src/modules/transaction/entities"
+  "src/modules/transaction"
+  "src/jobs/queues"
+  "src/jobs/workers"
+  "src/cache"
+)
+
+declare -A files=(
+  ["src/modules/wallet/controllers/wallet.controller.ts"]="// wallet.controller.ts\n\nimport { Controller, Post } from '@nestjs/common';\n\n@Controller('wallet')\nexport class WalletController {\n  @Post('deposit')\n  deposit() {\n    return 'Deposit route hit';\n  }\n}"
+  ["src/modules/wallet/services/wallet.service.ts"]="// wallet.service.ts\n\nexport class WalletService {\n  pushToQueue() {\n    // logic to push job to queue\n  }\n}"
+  ["src/modules/wallet/dto/deposit.dto.ts"]="// deposit.dto.ts\n\nexport class DepositDto {\n  amount: number;\n  userId: string;\n}"
+  ["src/modules/transaction/entities/transaction.entity.ts"]="// transaction.entity.ts"
+  ["src/modules/transaction/transaction.module.ts"]="// transaction.module.ts"
+  ["src/jobs/queues/transaction.queue.ts"]="// transaction.queue.ts"
+  ["src/jobs/workers/transaction.processor.ts"]="// transaction.processor.ts"
+  ["src/cache/redis.service.ts"]="// redis.service.ts"
+)
+
+# Create directories if they don't exist
+for dir in "${dirs[@]}"; do
+  if [ ! -d "$dir" ]; then
+    mkdir -p "$dir"
+    echo "📁 Created directory: $dir"
+  fi
+done
+
+# Create files if they don't exist
+for path in "${!files[@]}"; do
+  if [ ! -f "$path" ]; then
+    echo -e "${files[$path]}" > "$path"
+    echo "📄 Created file: $path"
+  else
+    echo "✅ File already exists: $path"
+  fi
+done
+
+echo "✅ Setup complete."
+
