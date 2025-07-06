@@ -1,6 +1,6 @@
-import { IsUUID, IsNumber, Min, IsPositive, IsNotEmpty } from 'class-validator';
+import { IsUUID, IsNumber, Min, IsNotEmpty, IsPositive } from 'class-validator';
 
-export class DepositDto {
+export class WithdrawDto {
   @IsNumber()
   @Min(0.01)
   @IsNotEmpty()
@@ -10,5 +10,3 @@ export class DepositDto {
   @IsUUID()
   transactionId: string;
 }
-
-
