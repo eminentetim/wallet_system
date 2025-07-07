@@ -1,11 +1,21 @@
-
 import { Injectable } from '@nestjs/common';
 import { Redis } from 'ioredis';
 
-
 @Injectable()
 export class RedisService {
-  private readonly client = new Redis();
+  private readonly client: Redis;
+
+  constructor() {
+    this.client = new Redis(); 
+  }
+
+  async get(cacheKey: string): Promise<string | null> {
+    return this.client.get(cacheKey);
+  }
+
+  async set(cacheKey: string, value: string, mode: 'EX', ttl: number): Promise<'OK'> {
+    return this.client.set(cacheKey, value, mode, ttl);
+  }
 
   async setWalletBalance(walletId: string, balance: number): Promise<void> {
     await this.client.set(`wallet:balance:${walletId}`, balance.toString());
@@ -31,6 +41,8 @@ export class RedisService {
 
   async invalidateTransactions(walletId: string): Promise<void> {
     const keys = await this.client.keys(`wallet:txns:${walletId}:*`);
-    if (keys.length) await this.client.del(...keys);
+    if (keys.length) {
+      await this.client.del(...keys);
+    }
   }
 }

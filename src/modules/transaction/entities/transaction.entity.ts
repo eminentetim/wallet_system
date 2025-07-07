@@ -9,7 +9,7 @@ export class Transaction {
   @Column()
   walletId: string;
 
-  @Column({ type: 'numeric' })
+  @Column('decimal', { precision: 12, scale: 2 })
   amount: number;
 
   @Column({ type: 'enum', enum: TransactionType })
@@ -21,12 +21,14 @@ export class Transaction {
   @Column({ default: 'pending' })
   status: 'pending' | 'success' | 'failed';
 
-  @Column({type: 'numeric'})
-  balance?: number;
+  @Column({ nullable: true })
+  balance: number;
+
 
   @CreateDateColumn()
   createdAt: Date;
 }
+
  
 
 

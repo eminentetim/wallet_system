@@ -1,98 +1,210 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 💰 Wallet System API (NestJS)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A production-grade **Wallet System API** built with [NestJS](https://nestjs.com/), supporting:
+- Wallet creation
+- Deposit, withdrawal, and transfer of funds
+- Transaction idempotency
+- Job queue processing with Bull
+- Redis caching
+- PostgreSQL as the data store
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 🧰 Tech Stack
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Framework**: [NestJS](https://nestjs.com/)
+- **Database**: PostgreSQL
+- **ORM**: TypeORM
+- **Queue**: Bull (Redis)
+- **Cache**: Redis
+- **Testing**: Jest + Supertest
+- **API Docs**: Swagger (OpenAPI)
 
-## Project setup
+---
+
+## 🚀 Features
+
+- ✅ Create wallet with optional initial balance
+- ✅ Deposit & Withdraw with transaction queue
+- ✅ Atomic and idempotent fund transfers
+- ✅ Transaction history with pagination
+- ✅ Redis-based caching
+- ✅ Concurrency-safe processing
+- ✅ Clean architecture with modules and services
+- ✅ E2E and unit test support
+
+---
+
+## 📁 Project Structure
+
+
+src/
+├── app.module.ts
+├── main.ts
+├── modules/
+│ ├── wallet/
+│ │ ├── controllers/
+│ │ ├── dto/
+│ │ ├── entities/
+│ │ ├── services/
+│ │ └── wallet.module.ts
+│ └── transaction/
+│ ├── entities/
+│ ├── enums/
+│ └── transaction.module.ts
+├── jobs/
+│ └── workers/transaction.processor.ts
+├── cache/
+│ └── redis.service.ts
+test/
+├── app.e2e-spec.ts
+└── wallet.e2e-spec.ts
+
+
+
+
+---
+
+## 📦 Installation
 
 ```bash
-$ npm install
-```
+# 1. Clone the repo
+git clone https://github.com/etimeminent/wallet-system.git
+cd wallet-system
 
-## Compile and run the project
+# 2. Install dependencies
+npm install
 
-```bash
-# development
-$ npm run start
+# 3. Setup PostgreSQL and Redis, then update your .env file
+cp .env.example .env
 
-# watch mode
-$ npm run start:dev
+# 4. Run migrations or sync schema
+npm run migration:run
+# or enable synchronize in ormconfig (not for production)
 
-# production mode
-$ npm run start:prod
-```
+# 5. Start the app
+npm run start:dev
 
-## Run tests
 
-```bash
-# unit tests
-$ npm run test
+🛠️ API Endpoints
+Base URL: http://localhost:3000
 
-# e2e tests
-$ npm run test:e2e
+➕ Create Wallet
+http
+Copy
+Edit
+POST /wallets/create
+Body:
 
-# test coverage
-$ npm run test:cov
-```
+json
+Copy
+Edit
+{
+  "userId": "uuid-string",
+  "initialBalance": 1000
+}
+💵 Deposit Funds
+http
+Copy
+Edit
+POST /wallets/:id/deposit
+Body:
 
-## Deployment
+json
+Copy
+Edit
+{
+  "amount": 500,
+  "transactionId": "unique-uuid"
+}
+💸 Withdraw Funds
+http
+Copy
+Edit
+POST /wallets/:id/withdraw
+Body:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+json
+Copy
+Edit
+{
+  "amount": 100,
+  "transactionId": "unique-uuid"
+}
+🔁 Transfer Funds
+http
+Copy
+Edit
+POST /wallets/transfer
+Body:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+json
+Copy
+Edit
+{
+  "sourceWalletId": "uuid-1",
+  "destinationWalletId": "uuid-2",
+  "amount": 100,
+  "transactionId": "unique-uuid"
+}
+📜 Get Transaction History
+http
+Copy
+Edit
+GET /wallets/:id/transactions?page=1&limit=10
+📌 Swagger API Docs
+Run the server and access the Swagger UI at:
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+bash
+Copy
+Edit
+http://localhost:3000/api
+⚙️ Job Processing (Bull Queue)
+Jobs are dispatched for:
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+deposit
 
-## Resources
+withdraw
 
-Check out a few resources that may come in handy when working with NestJS:
+transfer
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+You can monitor job queues using tools like Arena or Bull Board.
 
-## Support
+🧠 Concepts Implemented
+Idempotency: Prevent duplicate processing via transactionId
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Atomicity: Withdrawals and Transfers handled using QueryRunner
 
-## Stay in touch
+Concurrency Safety: Pessimistic locks for critical operations
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Redis Cache: Paginated transaction history caching with TTL
 
-## License
+Workers: Background processors handle actual fund updates
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+📈 Performance Tips
+Set proper Redis eviction policies
+
+Enable connection pooling for TypeORM
+
+Use @CacheInterceptor for common GET routes
+
+Monitor jobs for failures
+
+👨‍💻 Contributing
+Fork this repo
+
+Create a feature branch: git checkout -b feature-name
+
+Commit changes: git commit -m 'Add feature'
+
+Push to branch: git push origin feature-name
+
+Open a Pull Request
+
+📝 License
+This project is licensed under the MIT License.
+
+📞 Contact
+Developed by [Emem Etim] — Fullstack Developer
+Email: etimeminent@gmail.com
+Portfolio: https://v0-eminent-portfolio.vercel.app/

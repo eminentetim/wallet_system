@@ -1,5 +1,3 @@
-// src/common/services/idempotency.service.ts
-
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -17,8 +15,15 @@ export class IdempotencyService {
    * Registers a transaction only if it doesn't exist
    * @throws ConflictException if transactionId already processed or pending
    */
-  async registerIfNew(transactionId: string, walletId: string, amount: number, type: TransactionType) {
-    const existing = await this.txRepo.findOne({ where: { transactionId } });
+  async registerIfNew(
+    transactionId: string,
+    walletId: string,
+    amount: number,
+    type: TransactionType,
+  ) {
+    const existing = await this.txRepo.findOne({
+      where: { transactionId },
+    });
 
     if (existing) {
       throw new ConflictException('Duplicate transaction ID');

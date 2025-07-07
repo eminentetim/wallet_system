@@ -10,14 +10,61 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
+const config_1 = require("@nestjs/config");
+const typeorm_1 = require("@nestjs/typeorm");
+const bull_1 = require("@nestjs/bull");
+const throttler_1 = require("@nestjs/throttler");
+const core_1 = require("@nestjs/core");
+const wallet_module_1 = require("./modules/wallet/wallet.module");
+const transaction_module_1 = require("./modules/transaction/transaction.module");
+const transaction_queue_module_1 = require("./jobs/transaction.queue.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [],
+        imports: [
+            config_1.ConfigModule.forRoot({
+                isGlobal: true,
+            }),
+            typeorm_1.TypeOrmModule.forRootAsync({
+                imports: [config_1.ConfigModule],
+                useFactory: (configService) => ({
+                    type: 'postgres',
+                    host: configService.get('DB_HOST'),
+                    port: parseInt(configService.get('DB_PORT', '5432')),
+                    username: configService.get('DB_USERNAME'),
+                    password: configService.get('DB_PASSWORD'),
+                    database: configService.get('DB_NAME'),
+                    autoLoadEntities: true,
+                    synchronize: true,
+                }),
+                inject: [config_1.ConfigService],
+            }),
+            throttler_1.ThrottlerModule.forRoot({
+                throttlers: [
+                    {
+                        limit: 10,
+                        ttl: 60,
+                    },
+                ],
+            }),
+            bull_1.BullModule.forRoot({
+                redis: { host: 'localhost', port: 6379 },
+            }),
+            bull_1.BullModule.registerQueue({ name: 'transactions' }),
+            wallet_module_1.WalletModule,
+            transaction_module_1.TransactionModule,
+            transaction_queue_module_1.TransactionQueueModule,
+        ],
+        providers: [
+            app_service_1.AppService,
+            {
+                provide: core_1.APP_GUARD,
+                useClass: throttler_1.ThrottlerGuard,
+            },
+        ],
         controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

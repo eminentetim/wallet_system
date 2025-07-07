@@ -1,24 +1,31 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Wallet } from '../entities/wallet.entity';
 import { Repository } from 'typeorm';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
+
+import { Wallet } from '../entities/wallet.entity';
+import { Transaction } from '@/modules/transaction/entities/transaction.entity';
 import { CreateWalletDto } from '../dto/create-wallet.dto';
 import { DepositDto } from '../dto/deposit.dto';
 import { WithdrawDto } from '../dto/withdraw.dto';
 import { TransferDto } from '../dto/transfer.dto';
-import { TransactionType } from 'src/modules/transaction/enums/transaction-type.enum';
+import { TransactionType } from '@/modules/transaction/enums/transaction-type.enum';
+import { RedisService } from '@/cache/redis.service';
 
 @Injectable()
 export class WalletService {
-  enqueueDeposit: any;
-  txRepo: any;
-  transactionQueue: any;
-    enqueueTransfer: any;
-    redis: any;
-
   constructor(
     @InjectRepository(Wallet)
-    private walletRepo: Repository<Wallet>,
+    private readonly walletRepo: Repository<Wallet>,
+
+    @InjectRepository(Transaction)
+    private readonly txRepo: Repository<Transaction>,
+
+    @InjectQueue('transactions')
+    private readonly transactionQueue: Queue,
+
+    private readonly redis: RedisService,
   ) {}
 
   async createWallet(dto: CreateWalletDto): Promise<Wallet> {
@@ -38,7 +45,7 @@ export class WalletService {
     return this.walletRepo.save(wallet);
   }
 
-  async deposit(walletId: string, dto: DepositDto) {
+  async enqueueDeposit(walletId: string, dto: DepositDto): Promise<{ message: string }> {
     const existingTx = await this.txRepo.findOne({
       where: { transactionId: dto.transactionId },
     });
@@ -55,7 +62,7 @@ export class WalletService {
       status: 'pending',
     });
 
-    await this.transactionQueue.enqueueDeposit({
+    await this.transactionQueue.add('deposit', {
       walletId,
       amount: dto.amount,
       transactionId: dto.transactionId,
@@ -63,9 +70,8 @@ export class WalletService {
 
     return { message: 'Deposit scheduled for processing' };
   }
-  
 
-  async enqueueWithdraw(walletId: string, dto: WithdrawDto) {
+  async enqueueWithdraw(walletId: string, dto: WithdrawDto): Promise<{ message: string }> {
     const existingTx = await this.txRepo.findOne({
       where: { transactionId: dto.transactionId },
     });
@@ -82,7 +88,7 @@ export class WalletService {
       status: 'pending',
     });
 
-    await this.transactionQueue.enqueueWithdraw({
+    await this.transactionQueue.add('withdraw', {
       walletId,
       amount: dto.amount,
       transactionId: dto.transactionId,
@@ -91,65 +97,68 @@ export class WalletService {
     return { message: 'Withdrawal scheduled for processing' };
   }
 
-  async Transfer(dto: TransferDto) {
-  const existing = await this.txRepo.findOne({ where: { transactionId: dto.transactionId } });
-  if (existing) {
-    throw new ConflictException('Duplicate transaction ID');
+  async transfer(dto: TransferDto): Promise<{ message: string }> {
+    const existing = await this.txRepo.findOne({
+      where: { transactionId: dto.transactionId },
+    });
+
+    if (existing) {
+      throw new ConflictException('Duplicate transaction ID');
+    }
+
+    await this.txRepo.save({
+      walletId: dto.sourceWalletId,
+      amount: dto.amount,
+      type: TransactionType.TRANSFER,
+      transactionId: dto.transactionId,
+      status: 'pending',
+    });
+
+    await this.transactionQueue.add('transfer', dto);
+
+    return { message: 'Transfer scheduled for processing' };
   }
 
-  await this.txRepo.save({
-    walletId: dto.sourceWalletId,
-    amount: dto.amount,
-    type: TransactionType.TRANSFER,
-    transactionId: dto.transactionId,
-    status: 'pending',
-  });
+  async getTransactionHistory(
+    walletId: string,
+    page = 1,
+    limit = 20,
+  ): Promise<{
+    data: any[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
+    const cacheKey = `wallet:txns:${walletId}:${page}`;
+    const cached = await this.redis.get(cacheKey);
 
-  await this.transactionQueue.enqueueTransfer(dto);
+    if (cached) {
+      return JSON.parse(cached);
+    }
 
-  return {
-    message: 'Transfer scheduled for processing',
-  };
-}
+    const [data, total] = await this.txRepo.findAndCount({
+      where: { walletId },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
 
+    const result = {
+      data: data.map((tx) => ({
+        id: tx.id,
+        amount: tx.amount,
+        type: tx.type,
+        status: tx.status,
+        createdAt: tx.createdAt,
+      })),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
 
-async getTransactionHistory(walletId: string, page: number, limit: number) {
-  const cacheKey = `wallet:txns:${walletId}:${page}`;
-  const cached = await this.redis.get(cacheKey);
+    await this.redis.set(cacheKey, JSON.stringify(result), 'EX', 60); // Cache for 60 seconds
 
-  if (cached) {
-    return JSON.parse(cached);
+    return result;
   }
-
-  const [data, total] = await this.txRepo.findAndCount({
-    where: { walletId },
-    order: { createdAt: 'DESC' },
-    skip: (page - 1) * limit,
-    take: limit,
-  });
-
-  const result = {
-    data: data.map(tx => ({
-      id: tx.id,
-      amount: tx.amount,
-      type: tx.type,
-      status: tx.status,
-      createdAt: tx.createdAt,
-    })),
-    meta: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
-  };
-
-  await this.redis.set(cacheKey, JSON.stringify(result), 'EX', 60); // 60s TTL
-
-  return result;
 }
-
-}
-
-
-

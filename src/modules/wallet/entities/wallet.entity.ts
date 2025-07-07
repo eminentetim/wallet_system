@@ -1,4 +1,3 @@
-// src/modules/wallet/entities/wallet.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Unique } from 'typeorm';
 
 @Entity('wallets')

@@ -1,16 +1,24 @@
 import {
   ThrottlerGuard,
-  ThrottlerStorageService,
+  ThrottlerStorage,
 } from '@nestjs/throttler';
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import { Injectable, ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { ThrottlerModuleOptions } from '@nestjs/throttler/dist/throttler-module-options.interface';
 
 @Injectable()
 export class UserThrottleGuard extends ThrottlerGuard {
-  constructor(protected storage: ThrottlerStorageService) {
-    super(storage);
+  constructor(
+    options: ThrottlerModuleOptions,
+    storage: ThrottlerStorage,
+    reflector: Reflector,
+  ) {
+    super(options, storage, reflector);
   }
 
-  protected getTracker(req: any): string {
-    return req.user?.id || req.ip;
+  protected async getTracker(req: Record<string, any>): Promise<string> {
+    return req.user?.id ?? req.ip;
   }
 }
+
+

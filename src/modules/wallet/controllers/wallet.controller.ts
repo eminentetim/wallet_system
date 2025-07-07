@@ -4,15 +4,16 @@ import { CreateWalletDto } from '../dto/create-wallet.dto';
 import { DepositDto } from '../dto/deposit.dto';
 import { WithdrawDto } from '../dto/withdraw.dto';
 import { TransferDto } from '../dto/transfer.dto';
+import { PaginateQueryDto } from '@/common/dto/paginate-query.dto';
+
 import {
-  ApiBody,
+  ApiTags,
   ApiOperation,
+  ApiResponse,
+  ApiBody,
   ApiParam,
   ApiQuery,
-  ApiResponse,
-  ApiTags,
 } from '@nestjs/swagger';
-import { PaginateQueryDto } from 'src/common/dto/paginate-query.dto';
 
 @ApiTags('Wallets')
 @Controller('wallets')
@@ -30,7 +31,7 @@ export class WalletController {
     },
   })
   @ApiResponse({ status: 201, description: 'Wallet successfully created' })
-  async createWallet(@Body() dto: CreateWalletDto) {
+  async createWallet(@Body() dto: CreateWalletDto): Promise<any> {
     return this.walletService.createWallet(dto);
   }
 
@@ -46,7 +47,10 @@ export class WalletController {
     },
   })
   @ApiResponse({ status: 201, description: 'Deposit scheduled for processing' })
-  deposit(@Param('id') id: string, @Body() dto: DepositDto) {
+  async deposit(
+    @Param('id') id: string,
+    @Body() dto: DepositDto,
+  ): Promise<any> {
     return this.walletService.enqueueDeposit(id, dto);
   }
 
@@ -62,7 +66,10 @@ export class WalletController {
     },
   })
   @ApiResponse({ status: 201, description: 'Withdrawal scheduled for processing' })
-  withdraw(@Param('id') id: string, @Body() dto: WithdrawDto) {
+  async withdraw(
+    @Param('id') id: string,
+    @Body() dto: WithdrawDto,
+  ): Promise<any> {
     return this.walletService.enqueueWithdraw(id, dto);
   }
 
@@ -79,20 +86,19 @@ export class WalletController {
     },
   })
   @ApiResponse({ status: 201, description: 'Transfer scheduled for processing' })
-  async transfer(@Body() dto: TransferDto) {
-    return this.walletService.enqueueTransfer(dto);
+  async transfer(@Body() dto: TransferDto): Promise<any> {
+    return this.walletService.transfer(dto);
   }
 
   @Get(':id/transactions')
-@ApiOperation({ summary: 'Get paginated transaction history' })
-@ApiParam({ name: 'id', description: 'Wallet ID' })
-@ApiQuery({ name: 'page', required: false, example: 1 })
-@ApiQuery({ name: 'limit', required: false, example: 20 })
-async getTransactions(
-  @Param('id') id: string,
-  @Query() query: PaginateQueryDto,
-) {
-  return this.walletService.getTransactionHistory(id, query.page, query.limit);
-}
-
+  @ApiOperation({ summary: 'Get paginated transaction history' })
+  @ApiParam({ name: 'id', description: 'Wallet ID' })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 20 })
+  async getTransactions(
+    @Param('id') id: string,
+    @Query() query: PaginateQueryDto,
+  ): Promise<any> {
+    return this.walletService.getTransactionHistory(id, query.page, query.limit);
+  }
 }

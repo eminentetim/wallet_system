@@ -3,10 +3,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { WalletService } from '../services/wallet.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Wallet } from '../entities/wallet.entity';
-import { Repository } from 'typeorm';
+import { Repository, Transaction } from 'typeorm';
 import { ConflictException } from '@nestjs/common';
-import { Transaction } from '../transaction/entities/transaction.entity';
 import { TransactionQueue } from '@/jobs/queues/transaction.queue';
+
 
 
 describe('WalletService', () => {
